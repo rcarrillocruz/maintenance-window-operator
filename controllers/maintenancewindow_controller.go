@@ -50,6 +50,13 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
+	var maintenanceWindow windowv1alpha1.MaintenanceWindow
+	err := r.Get(ctx, req.NamespacedName, &maintenanceWindow)
+	if err != nil {
+		log.Log.Error(err, "unable to get MaintenanceWindow")
+	}
+
+	log.Log.Info("DEBUG", "maintenanceWindow", maintenanceWindow)
 
 	return ctrl.Result{}, nil
 }
