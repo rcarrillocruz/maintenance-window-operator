@@ -28,14 +28,21 @@ type MaintenanceWindowSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of MaintenanceWindow. Edit maintenancewindow_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Date     string `json:"startDate"`
+	Time     string `json:"startTime"`
+	Duration *int32 `json:"duration"`
+	TimeZone string `json:"timezone"`
+
+	ChangeType  string `json:"changeType"`
+	ChangeScope string `json:"changeScope"`
 }
 
 // MaintenanceWindowStatus defines the observed state of MaintenanceWindow
 type MaintenanceWindowStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	Status string `json:"status"`
 }
 
 //+kubebuilder:object:root=true
