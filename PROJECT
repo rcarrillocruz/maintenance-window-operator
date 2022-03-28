@@ -3,4 +3,14 @@ layout:
 - go.kubebuilder.io/v3
 projectName: maintenance-window-operator
 repo: github.com/stolostron/maintenance-window-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: open-cluster-management.io
+  group: window
+  kind: MaintenanceWindow
+  path: github.com/stolostron/maintenance-window-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"
