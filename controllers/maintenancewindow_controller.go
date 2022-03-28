@@ -84,7 +84,14 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		log.Log.Info("DEBUG", "diff", diff)
 		return ctrl.Result{RequeueAfter: diff}, nil
 	} else {
-		log.Log.Info("DEBUG: Maintenance window now in place")
+		if time.Since(builtTime) > time.Duration(*maintenanceWindow.Spec.Duration)*time.Second {
+			log.Log.Info("DEBUG", "fistParam", time.Since(builtTime).String())
+			log.Log.Info("DEBUG", "secondParam", time.Duration(*maintenanceWindow.Spec.Duration)*time.Second)
+			log.Log.Info("DEBUG: Maintenance window is closed")
+		} else {
+			log.Log.Info("DEBUG: Maintenance window now in place")
+			return ctrl.Result{RequeueAfter: time.Duration(*maintenanceWindow.Spec.Duration) * time.Second}, nil
+		}
 	}
 
 	return ctrl.Result{}, nil
