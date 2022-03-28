@@ -18,7 +18,9 @@ package controllers
 
 import (
 	"context"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,9 +56,36 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	err := r.Get(ctx, req.NamespacedName, &maintenanceWindow)
 	if err != nil {
 		log.Log.Error(err, "unable to get MaintenanceWindow")
+		return ctrl.Result{}, nil
 	}
 
-	log.Log.Info("DEBUG", "maintenanceWindow", maintenanceWindow)
+	startDate, err := time.Parse("2006-01-02", maintenanceWindow.Spec.Date)
+	if err != nil {
+		log.Log.Error(err, "unable to parse startDate")
+		return ctrl.Result{}, nil
+	}
+	startTime, err := time.Parse(time.Kitchen, maintenanceWindow.Spec.Time)
+	if err != nil {
+		log.Log.Error(err, "unable to parse startTime")
+		return ctrl.Result{}, nil
+	}
+	location, err := time.LoadLocation(maintenanceWindow.Spec.TimeZone)
+	if err != nil {
+		log.Log.Error(err, "unable to load location for given timezone")
+	}
+	builtTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), startTime.Hour(), startTime.Minute(), 0, 0, location)
+	log.Log.Info("DEBUG", "built time", builtTime.String())
+	log.Log.Info("DEBUG", "time now", metav1.Now())
+
+	diff := builtTime.UTC().Sub(time.Now().UTC())
+	log.Log.Info("DEBUG", "time till maintenance window", diff)
+	if diff > 0 {
+		log.Log.Info("DEBUG: Maintenance window has not yet started")
+		log.Log.Info("DEBUG", "diff", diff)
+		return ctrl.Result{RequeueAfter: diff}, nil
+	} else {
+		log.Log.Info("DEBUG: Maintenance window now in place")
+	}
 
 	return ctrl.Result{}, nil
 }

@@ -3,7 +3,7 @@ kind: MaintenanceWindow
 metadata:
   name: test
 spec:
-  startDate: "2022-3-28"
+  startDate: "2022-03-28"
   startTime: "3:00PM"
   duration: 14400
   timezone: CET
