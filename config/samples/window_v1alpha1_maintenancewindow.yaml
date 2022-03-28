@@ -1,6 +1,11 @@
 apiVersion: window.open-cluster-management.io/v1alpha1
 kind: MaintenanceWindow
 metadata:
-  name: maintenancewindow-sample
+  name: test
 spec:
-  # TODO(user): Add fields here
+  startDate: "2022-3-28"
+  startTime: "3:00PM"
+  duration: 14400
+  timezone: CET
+  changeType: ClusterLifeCycle
+  changeScope: ALL
