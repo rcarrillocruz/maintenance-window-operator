@@ -1,0 +1,6 @@
+domain: open-cluster-management.io
+layout:
+- go.kubebuilder.io/v3
+projectName: maintenance-window-operator
+repo: github.com/stolostron/maintenance-window-operator
+version: "3"
