@@ -81,6 +81,10 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	if maintenanceWindow.Status.State == "" {
 		maintenanceWindow.Status.State = "SCHEDULED"
+		err = r.Status().Update(ctx, &maintenanceWindow)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	switch maintenanceWindow.Status.State {
@@ -92,20 +96,23 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			return ctrl.Result{RequeueAfter: diff}, nil
 		}
 		maintenanceWindow.Status.State = "OPENED"
+		err = r.Status().Update(ctx, &maintenanceWindow)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	case "OPENED":
 		if time.Since(effectiveTime) <= time.Duration(*maintenanceWindow.Spec.Duration)*time.Second {
 			log.Log.Info("DEBUG: Maintenance window now in place")
 			return ctrl.Result{RequeueAfter: time.Duration(*maintenanceWindow.Spec.Duration) * time.Second}, nil
 		}
 		maintenanceWindow.Status.State = "CLOSED"
+		err = r.Status().Update(ctx, &maintenanceWindow)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	case "CLOSED":
 		log.Log.Info("DEBUG: Maintenance window is closed")
 		return ctrl.Result{}, nil
-	}
-
-	err = r.Status().Update(ctx, &maintenanceWindow)
-	if err != nil {
-		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
