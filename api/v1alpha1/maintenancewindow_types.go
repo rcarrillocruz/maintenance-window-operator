@@ -33,8 +33,10 @@ type MaintenanceWindowSpec struct {
 	Duration *int32 `json:"duration"`
 	TimeZone string `json:"timezone"`
 
-	ChangeType  string `json:"changeType"`
-	ChangeScope string `json:"changeScope"`
+	//+kubebuilder:default:=ClusterLifeCycle
+	ChangeType string `json:"changeType,omitempty"`
+	//+kubebuilder:default:=all
+	ChangeScope string `json:"changeScope,omitempty"`
 }
 
 // MaintenanceWindowStatus defines the observed state of MaintenanceWindow

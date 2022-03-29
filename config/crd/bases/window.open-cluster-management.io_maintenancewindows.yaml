@@ -36,8 +36,10 @@ spec:
             description: MaintenanceWindowSpec defines the desired state of MaintenanceWindow
             properties:
               changeScope:
+                default: all
                 type: string
               changeType:
+                default: ClusterLifeCycle
                 type: string
               duration:
                 format: int32
@@ -49,8 +51,6 @@ spec:
               timezone:
                 type: string
             required:
-            - changeScope
-            - changeType
             - duration
             - startDate
             - startTime
