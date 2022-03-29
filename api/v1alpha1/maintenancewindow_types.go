@@ -42,7 +42,7 @@ type MaintenanceWindowStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Status string `json:"status"`
+	State string `json:"state"`
 }
 
 //+kubebuilder:object:root=true

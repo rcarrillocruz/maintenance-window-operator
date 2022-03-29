@@ -59,10 +59,10 @@ spec:
           status:
             description: MaintenanceWindowStatus defines the observed state of MaintenanceWindow
             properties:
-              status:
+              state:
                 type: string
             required:
-            - status
+            - state
             type: object
         type: object
     served: true

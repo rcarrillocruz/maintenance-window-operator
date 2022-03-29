@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,6 +55,10 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	var maintenanceWindow windowv1alpha1.MaintenanceWindow
 	err := r.Get(ctx, req.NamespacedName, &maintenanceWindow)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+
 		log.Log.Error(err, "unable to get MaintenanceWindow")
 		return ctrl.Result{}, nil
 	}
@@ -73,25 +77,35 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if err != nil {
 		log.Log.Error(err, "unable to load location for given timezone")
 	}
-	builtTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), startTime.Hour(), startTime.Minute(), 0, 0, location)
-	log.Log.Info("DEBUG", "built time", builtTime.String())
-	log.Log.Info("DEBUG", "time now", metav1.Now())
+	effectiveTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), startTime.Hour(), startTime.Minute(), 0, 0, location)
 
-	diff := builtTime.UTC().Sub(time.Now().UTC())
-	log.Log.Info("DEBUG", "time till maintenance window", diff)
-	if diff > 0 {
+	if maintenanceWindow.Status.State == "" {
+		maintenanceWindow.Status.State = "SCHEDULED"
+	}
+
+	switch maintenanceWindow.Status.State {
+	case "SCHEDULED":
 		log.Log.Info("DEBUG: Maintenance window has not yet started")
-		log.Log.Info("DEBUG", "diff", diff)
-		return ctrl.Result{RequeueAfter: diff}, nil
-	} else {
-		if time.Since(builtTime) > time.Duration(*maintenanceWindow.Spec.Duration)*time.Second {
-			log.Log.Info("DEBUG", "fistParam", time.Since(builtTime).String())
-			log.Log.Info("DEBUG", "secondParam", time.Duration(*maintenanceWindow.Spec.Duration)*time.Second)
-			log.Log.Info("DEBUG: Maintenance window is closed")
-		} else {
+		diff := effectiveTime.UTC().Sub(time.Now().UTC())
+		if diff > 0 {
+			log.Log.Info("DEBUG", "diff", diff)
+			return ctrl.Result{RequeueAfter: diff}, nil
+		}
+		maintenanceWindow.Status.State = "OPENED"
+	case "OPENED":
+		if time.Since(effectiveTime) <= time.Duration(*maintenanceWindow.Spec.Duration)*time.Second {
 			log.Log.Info("DEBUG: Maintenance window now in place")
 			return ctrl.Result{RequeueAfter: time.Duration(*maintenanceWindow.Spec.Duration) * time.Second}, nil
 		}
+		maintenanceWindow.Status.State = "CLOSED"
+	case "CLOSED":
+		log.Log.Info("DEBUG: Maintenance window is closed")
+		return ctrl.Result{}, nil
+	}
+
+	err = r.Status().Update(ctx, &maintenanceWindow)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
