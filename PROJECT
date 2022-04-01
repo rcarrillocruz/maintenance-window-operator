@@ -13,4 +13,7 @@ resources:
   kind: MaintenanceWindow
   path: github.com/stolostron/maintenance-window-operator/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"
