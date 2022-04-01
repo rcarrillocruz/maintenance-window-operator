@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,8 +52,7 @@ func (r *MaintenanceWindow) ValidateCreate() error {
 func (r *MaintenanceWindow) ValidateUpdate(old runtime.Object) error {
 	maintenancewindowlog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	return apierrors.NewBadRequest("MaintenanceWindow CR cannot be updated")
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
