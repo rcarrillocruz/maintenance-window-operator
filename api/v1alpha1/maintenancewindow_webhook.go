@@ -52,7 +52,11 @@ func (r *MaintenanceWindow) ValidateCreate() error {
 func (r *MaintenanceWindow) ValidateUpdate(old runtime.Object) error {
 	maintenancewindowlog.Info("validate update", "name", r.Name)
 
-	return apierrors.NewBadRequest("MaintenanceWindow CR cannot be updated")
+	if r.Spec != old.(*MaintenanceWindow).Spec {
+		return apierrors.NewBadRequest("MaintenanceWindow CR cannot be updated")
+	}
+
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
