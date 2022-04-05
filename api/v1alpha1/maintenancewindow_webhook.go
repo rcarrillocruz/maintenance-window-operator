@@ -32,6 +32,22 @@ func (r *MaintenanceWindow) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
+//+kubebuilder:webhook:path=/mutate-window-open-cluster-management-io-v1alpha1-maintenancewindow,mutating=true,failurePolicy=fail,groups=window.open-cluster-management.io,resources=maintenancewindows,verbs=create;update,versions=v1alpha1,name=vmaintenancewindow.kb.io,sideEffects=None,admissionReviewVersions=v1
+
+var _ webhook.Defaulter = &MaintenanceWindow{}
+
+// Default implements webhook.Defaulter so a webhook will be registered for the type
+func (r *MaintenanceWindow) Default() {
+	maintenancewindowlog.Info("default", "name", r.Name)
+
+	if r.Spec.ChangeScope == "all" {
+		labels := make(map[string]string)
+		labels["maintenancewindows.window.open-cluster-management.io/scope"] = "all"
+		r.SetLabels(labels)
+	}
+
+}
+
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-window-open-cluster-management-io-v1alpha1-maintenancewindow,mutating=false,failurePolicy=fail,sideEffects=None,groups=window.open-cluster-management.io,resources=maintenancewindows,verbs=create;update;delete,versions=v1alpha1,name=vmaintenancewindow.kb.io,admissionReviewVersions=v1
 
