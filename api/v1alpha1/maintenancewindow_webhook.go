@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// log is for logging in this package.
 var maintenancewindowlog = logf.Log.WithName("maintenancewindow-resource")
 
 func (r *MaintenanceWindow) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -33,10 +32,8 @@ func (r *MaintenanceWindow) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-window-open-cluster-management-io-v1alpha1-maintenancewindow,mutating=false,failurePolicy=fail,sideEffects=None,groups=window.open-cluster-management.io,resources=maintenancewindows,verbs=create;update,versions=v1alpha1,name=vmaintenancewindow.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-window-open-cluster-management-io-v1alpha1-maintenancewindow,mutating=false,failurePolicy=fail,sideEffects=None,groups=window.open-cluster-management.io,resources=maintenancewindows,verbs=create;update;delete,versions=v1alpha1,name=vmaintenancewindow.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &MaintenanceWindow{}
 
@@ -44,7 +41,6 @@ var _ webhook.Validator = &MaintenanceWindow{}
 func (r *MaintenanceWindow) ValidateCreate() error {
 	maintenancewindowlog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
@@ -63,6 +59,9 @@ func (r *MaintenanceWindow) ValidateUpdate(old runtime.Object) error {
 func (r *MaintenanceWindow) ValidateDelete() error {
 	maintenancewindowlog.Info("validate delete", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
+	if r.Status.State == "OPENED" {
+		return apierrors.NewBadRequest("MaintenanceWindow CR cannot be deleted while it is in OPENED state")
+	}
+
 	return nil
 }
