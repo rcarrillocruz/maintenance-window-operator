@@ -31,8 +31,7 @@ var _ = Describe("MaintenanceWindow controller", func() {
 	const (
 		MaintenanceWindowName = "test-maintenancewindow"
 
-		timeout  = time.Second * 10
-		duration = time.Second * 10
+		timeout  = time.Second * 60
 		interval = time.Millisecond * 250
 	)
 
@@ -40,7 +39,7 @@ var _ = Describe("MaintenanceWindow controller", func() {
 		It("Should transition Status.State from SCHEDULED to OPENED to finally CLOSED", func() {
 			By("By creating a new MaintenanceWindow")
 			ctx := context.Background()
-			now := time.Now()
+			aMinuteFromNow := time.Now().UTC().Add(2 * time.Minute)
 			maintenanceWindow := &windowv1alpha1.MaintenanceWindow{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "window.open-cluster-management.io/v1alpha1",
@@ -50,10 +49,10 @@ var _ = Describe("MaintenanceWindow controller", func() {
 					Name: MaintenanceWindowName,
 				},
 				Spec: windowv1alpha1.MaintenanceWindowSpec{
-					Date:     now.Format("2006-01-02"),
-					Time:     now.Format(time.Kitchen),
+					Date:     aMinuteFromNow.Format("2006-01-02"),
+					Time:     aMinuteFromNow.Format(time.Kitchen),
 					TimeZone: "UTC",
-					Duration: func(i int32) *int32 { return &i }(1),
+					Duration: func(i int32) *int32 { return &i }(60),
 				},
 			}
 			Expect(k8sClient.Create(ctx, maintenanceWindow)).Should(Succeed())
@@ -67,6 +66,26 @@ var _ = Describe("MaintenanceWindow controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(createdMaintenanceWindow.Status.State).Should(Equal("SCHEDULED"))
+
+			By("By MaintenanceWindow is in SCHEDULED state")
+			time.Sleep(time.Until(aMinuteFromNow))
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, maintenanceWindowLookupKey, createdMaintenanceWindow)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			Expect(createdMaintenanceWindow.Status.State).Should(Equal("OPENED"))
+
+			By("By MaintenanceWindow is in OPENED state")
+			time.Sleep(time.Duration(*maintenanceWindow.Spec.Duration) * time.Second)
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, maintenanceWindowLookupKey, createdMaintenanceWindow)
+				return err == nil
+			}, 2*time.Minute, interval).Should(BeTrue())
+
+			Expect(createdMaintenanceWindow.Status.State).Should(Equal("CLOSED"))
 		})
 	})
 
