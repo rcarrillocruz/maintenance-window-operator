@@ -37,9 +37,13 @@ spec:
             properties:
               changeScope:
                 default: all
+                enum:
+                - all
                 type: string
               changeType:
                 default: ClusterLifeCycle
+                enum:
+                - ClusterLifeCycle
                 type: string
               duration:
                 format: int32

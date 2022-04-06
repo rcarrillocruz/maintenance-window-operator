@@ -34,8 +34,10 @@ type MaintenanceWindowSpec struct {
 	TimeZone string `json:"timezone"`
 
 	//+kubebuilder:default:=ClusterLifeCycle
+	//+kubebuilder:validation:Enum=ClusterLifeCycle
 	ChangeType string `json:"changeType,omitempty"`
 	//+kubebuilder:default:=all
+	//+kubebuilder:validation:Enum=all
 	ChangeScope string `json:"changeScope,omitempty"`
 }
 
