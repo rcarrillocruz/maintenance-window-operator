@@ -78,6 +78,7 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		log.Log.Error(err, "unable to load location for given timezone")
 	}
 	effectiveTime := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), startTime.Hour(), startTime.Minute(), 0, 0, location)
+	log.Log.Info("DEBUG", "effectiveTime", effectiveTime.String())
 
 	if maintenanceWindow.Status.State == "" {
 		maintenanceWindow.Status.State = "SCHEDULED"
@@ -90,7 +91,8 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	switch maintenanceWindow.Status.State {
 	case "SCHEDULED":
 		log.Log.Info("DEBUG: Maintenance window has not yet started")
-		diff := effectiveTime.UTC().Sub(time.Now().UTC())
+		diff := time.Until(effectiveTime)
+		log.Log.Info("DEBUG", "diff", diff)
 		if diff > 0 {
 			log.Log.Info("DEBUG", "diff", diff)
 			return ctrl.Result{RequeueAfter: diff}, nil
