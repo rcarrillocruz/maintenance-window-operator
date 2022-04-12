@@ -29,13 +29,13 @@ import (
 
 var _ = Describe("MaintenanceWindow controller", func() {
 	const (
-		MaintenanceWindowName = "test-maintenancewindow"
-
 		timeout  = time.Second * 60
 		interval = time.Millisecond * 250
 	)
 
-	Context("When updating MaintenanceWindow status", func() {
+	Context("When a MaintenanceWindow is created", func() {
+		const MaintenanceWindowName = "test-maintenancewindow-1"
+
 		It("Should transition Status.State from SCHEDULED to OPENED to finally CLOSED", func() {
 			By("By creating a new MaintenanceWindow")
 			ctx := context.Background()
@@ -86,6 +86,56 @@ var _ = Describe("MaintenanceWindow controller", func() {
 			}, 2*time.Minute, interval).Should(BeTrue())
 
 			Expect(createdMaintenanceWindow.Status.State).Should(Equal("CLOSED"))
+		})
+	})
+
+	Context("When a MaintenanceWindow is updated", func() {
+		const MaintenanceWindowName = "test-maintenancewindow-2"
+
+		It("Should fail and return an error message that MaintenanceWindow CRs cannot be updated", func() {
+			By("By creating a new MaintenanceWindow")
+			ctx := context.Background()
+			aMinuteFromNow := time.Now().UTC().Add(2 * time.Minute)
+			maintenanceWindow := &windowv1alpha1.MaintenanceWindow{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "window.open-cluster-management.io/v1alpha1",
+					Kind:       "MaintenanceWindow",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: MaintenanceWindowName,
+				},
+				Spec: windowv1alpha1.MaintenanceWindowSpec{
+					Date:     aMinuteFromNow.Format("2006-01-02"),
+					Time:     aMinuteFromNow.Format(time.Kitchen),
+					TimeZone: "UTC",
+					Duration: func(i int32) *int32 { return &i }(60),
+				},
+			}
+			Expect(k8sClient.Create(ctx, maintenanceWindow)).Should(Succeed())
+
+			maintenanceWindowLookupKey := types.NamespacedName{Name: MaintenanceWindowName}
+			createdMaintenanceWindow := &windowv1alpha1.MaintenanceWindow{}
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, maintenanceWindowLookupKey, createdMaintenanceWindow)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			By("Updating the Date")
+			createdMaintenanceWindow.Spec.Date = aMinuteFromNow.Add(24 * time.Hour).Format(time.Kitchen)
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
+
+			By("Updating the Time")
+			createdMaintenanceWindow.Spec.Time = aMinuteFromNow.Add(1 * time.Hour).Format("2006-01-02")
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
+
+			By("Updating the TimeZone")
+			createdMaintenanceWindow.Spec.TimeZone = "CET"
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
+
+			By("Updating the Duration")
+			createdMaintenanceWindow.Spec.Duration = func(i int32) *int32 { return &i }(120)
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
 		})
 	})
 
