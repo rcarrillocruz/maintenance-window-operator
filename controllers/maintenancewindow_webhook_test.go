@@ -27,16 +27,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("MaintenanceWindow controller", func() {
+var _ = Describe("MaintenanceWindow webhook", func() {
 	const (
-		MaintenanceWindowName = "test-maintenancewindow"
+		MaintenanceWindowName = "test-maintenancewindow-wh"
 		timeout               = time.Second * 60
 		interval              = time.Millisecond * 250
 	)
 
-	Context("When a MaintenanceWindow is created", func() {
+	Context("When a MaintenanceWindow is updated", func() {
 
-		It("Should transition Status.State from SCHEDULED to OPENED to finally CLOSED", func() {
+		It("Should fail and return an error message that MaintenanceWindow CRs cannot be updated", func() {
 			By("By creating a new MaintenanceWindow")
 			ctx := context.Background()
 			aMinuteFromNow := time.Now().UTC().Add(2 * time.Minute)
@@ -65,27 +65,22 @@ var _ = Describe("MaintenanceWindow controller", func() {
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
-			Expect(createdMaintenanceWindow.Status.State).Should(Equal("SCHEDULED"))
+			By("Updating the Date")
+			createdMaintenanceWindow.Spec.Date = aMinuteFromNow.Add(24 * time.Hour).Format(time.Kitchen)
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
 
-			By("By MaintenanceWindow is in SCHEDULED state")
-			time.Sleep(time.Until(aMinuteFromNow))
+			By("Updating the Time")
+			createdMaintenanceWindow.Spec.Time = aMinuteFromNow.Add(1 * time.Hour).Format("2006-01-02")
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
 
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, maintenanceWindowLookupKey, createdMaintenanceWindow)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+			By("Updating the TimeZone")
+			createdMaintenanceWindow.Spec.TimeZone = "CET"
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
 
-			Expect(createdMaintenanceWindow.Status.State).Should(Equal("OPENED"))
-
-			By("By MaintenanceWindow is in OPENED state")
-			time.Sleep(time.Duration(*maintenanceWindow.Spec.Duration) * time.Second)
-
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, maintenanceWindowLookupKey, createdMaintenanceWindow)
-				return err == nil
-			}, 2*time.Minute, interval).Should(BeTrue())
-
-			Expect(createdMaintenanceWindow.Status.State).Should(Equal("CLOSED"))
+			By("Updating the Duration")
+			createdMaintenanceWindow.Spec.Duration = func(i int32) *int32 { return &i }(120)
+			Expect(k8sClient.Update(context.Background(), createdMaintenanceWindow)).ShouldNot(Succeed())
 		})
 	})
+
 })
